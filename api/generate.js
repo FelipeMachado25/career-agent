@@ -1,0 +1,41 @@
+import Groq from 'groq-sdk'
+import { buildPrompt } from '../src/utils/prompt.js'
+
+const SYSTEM_PROMPT =
+  "You are a career exploration expert who specializes in unconventional professional paths. Given a person's interests and traits, you identify career directions they likely haven't considered. Be specific, inspiring, and honest. Never suggest generic paths."
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const { answers } = req.body ?? {}
+
+  if (!Array.isArray(answers) || answers.length !== 5) {
+    return res.status(400).json({ error: 'Invalid request' })
+  }
+
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+
+  try {
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildPrompt(answers) },
+      ],
+      temperature: 0.8,
+    })
+
+    const text = completion.choices[0]?.message?.content ?? ''
+    const data = JSON.parse(text)
+
+    if (!Array.isArray(data.paths) || data.paths.length < 5) {
+      return res.status(500).json({ error: 'Unexpected model response' })
+    }
+
+    return res.status(200).json({ paths: data.paths.slice(0, 5) })
+  } catch {
+    return res.status(500).json({ error: 'Failed to generate career paths' })
+  }
+}
