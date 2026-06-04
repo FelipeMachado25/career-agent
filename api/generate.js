@@ -15,6 +15,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid request' })
   }
 
+  if (!answers.every(a => typeof a === 'string' && a.trim().length >= 3)) {
+    return res.status(400).json({ error: 'Invalid request' })
+  }
+
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
   try {
@@ -25,6 +29,7 @@ export default async function handler(req, res) {
         { role: 'user', content: buildPrompt(answers) },
       ],
       temperature: 0.8,
+      response_format: { type: 'json_object' },
     })
 
     const text = completion.choices[0]?.message?.content ?? ''
