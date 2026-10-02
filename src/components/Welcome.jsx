@@ -5,7 +5,7 @@ export default function Welcome({ onStart }) {
         <div className="space-y-3">
           <h1 className="text-4xl font-bold text-white">Career Explorer</h1>
           <p className="text-muted text-lg leading-relaxed">
-            Answer 5 questions. Discover 5 career paths you've never considered.
+            Answer 5 questions. Discover 5 unconventional and 5 conventional career paths, each with a quick research snapshot.
           </p>
         </div>
         <button

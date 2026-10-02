@@ -1,6 +1,6 @@
 # Career Explorer
 
-Career Explorer asks you five introspective questions about what drives and defines you, then uses AI to surface five unconventional career paths tailored specifically to your answers. Results are shareable — a unique URL encodes your answers so you can bookmark them or send them to a friend.
+Career Explorer asks you five introspective questions about what drives and defines you, then uses AI to surface five unconventional and five conventional career paths tailored to your answers, shown in two tabs. Each path includes a short research snapshot: typical salary range, demand outlook, key skills, and a first step you can take this week. Results are shareable — a unique URL encodes your answers so you can bookmark them or send them to a friend.
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@ Career Explorer asks you five introspective questions about what drives and defi
 |---|---|
 | Frontend | React 18 + Vite |
 | Styling | Tailwind CSS 3 |
-| AI | Groq API (`llama-3.1-8b-instant`) |
+| AI | Groq API (`openai/gpt-oss-20b`) |
 | Backend | Vercel Serverless Functions |
 | Deployment | Vercel |
 
@@ -58,6 +58,7 @@ Career Explorer asks you five introspective questions about what drives and defi
 | Variable | Description | Required |
 |---|---|---|
 | `GROQ_API_KEY` | Groq API key from [console.groq.com](https://console.groq.com) | Yes |
+| `GROQ_MODEL` | Override the Groq model (default `openai/gpt-oss-20b`) | No |
 
 ## Project Structure
 
@@ -71,12 +72,12 @@ career-agent/
 │   │   ├── Welcome.jsx     # Landing screen
 │   │   ├── Question.jsx    # Question + progress bar + validation
 │   │   ├── Loading.jsx     # Animated loading indicator
-│   │   ├── Results.jsx     # Career cards + error state
+│   │   ├── Results.jsx     # Tabs (unconventional/conventional) + career cards + error state
 │   │   └── ShareButton.jsx # Clipboard copy with fallback
 │   ├── hooks/
 │   │   └── useCareerAgent.js  # All app state and logic
 │   └── utils/
-│       ├── prompt.js       # Groq user prompt builder
+│       ├── prompt.js       # Groq prompt builder + response parser
 │       └── url.js          # Answer encode/decode helpers
 ├── vercel.json             # SPA routing + API function config
 └── .env.example
@@ -87,11 +88,13 @@ career-agent/
 All AI calls are routed through `api/generate.js` — a Vercel serverless function. The `GROQ_API_KEY` is a server-side environment variable and is never included in the browser bundle.
 
 1. The React app collects 5 answers and sends `POST /api/generate` with `{ answers: [...] }`
-2. The serverless function builds a structured prompt and calls Groq's `llama-3.1-8b-instant`
-3. Groq returns a JSON object with 5 career path objects (`title` + `why`)
-4. The function validates the response shape and returns it to the frontend
+2. The serverless function builds a structured prompt and calls Groq's `openai/gpt-oss-20b`
+3. Groq returns a JSON object with `unconventional` and `conventional` arrays of 5 paths each (`title`, `why`, `salary`, `outlook`, `skills`, `firstStep`)
+4. The function validates and normalizes the response shape and returns it to the frontend
 
-If the call fails (network error, bad response, model returns fewer than 5 paths), the client retries up to 3 times with a 2-second delay between attempts before showing the error screen.
+> **Model note:** Groq shut down `llama-3.1-8b-instant` on 2026-08-16 and named `openai/gpt-oss-20b` as its replacement. If Groq retires a model again, set `GROQ_MODEL` in Vercel instead of changing code. Failures are logged in the Vercel function logs as `[generate] Groq error: ...`.
+
+If the call fails (network error, bad response, model returns fewer than 5 paths in either category), the client retries up to 3 times with a 2-second delay between attempts before showing the error screen.
 
 ## Running Tests
 
@@ -99,4 +102,4 @@ If the call fails (network error, bad response, model returns fewer than 5 paths
 npm test
 ```
 
-Tests cover the `url.js` encode/decode helpers and the `prompt.js` builder.
+Tests cover the `url.js` encode/decode helpers, the `prompt.js` builder and response parser, and the `api/generate.js` handler (with the Groq SDK mocked).

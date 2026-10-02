@@ -5,7 +5,7 @@ import Loading from './components/Loading.jsx'
 import Results from './components/Results.jsx'
 
 export default function App() {
-  const { screen, currentQ, paths, questions, start, nextQuestion, retry } =
+  const { screen, currentQ, careers, questions, start, nextQuestion, retry } =
     useCareerAgent()
 
   if (screen === 'welcome') return <Welcome onStart={start} />
@@ -23,10 +23,10 @@ export default function App() {
   if (screen === 'loading') return <Loading />
 
   if (screen === 'results')
-    return <Results paths={paths} onRetry={retry} isError={false} />
+    return <Results careers={careers} onRetry={retry} isError={false} />
 
   if (screen === 'error')
-    return <Results paths={[]} onRetry={retry} isError={true} />
+    return <Results careers={null} onRetry={retry} isError={true} />
 
   return null
 }
