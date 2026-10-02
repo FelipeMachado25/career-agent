@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { encodeAnswers, decodeAnswers } from '../utils/url.js'
+import { parseCareerResponse } from '../utils/prompt.js'
 
 export const QUESTIONS = [
   'What activity makes you completely lose track of time?',
@@ -16,18 +17,16 @@ async function fetchPaths(answers) {
     body: JSON.stringify({ answers }),
   })
   if (!res.ok) throw new Error('Request failed')
-  const data = await res.json()
-  if (!Array.isArray(data.paths) || data.paths.length < 5) {
-    throw new Error('Invalid response')
-  }
-  return data.paths
+  const careers = parseCareerResponse(await res.json())
+  if (!careers) throw new Error('Invalid response')
+  return careers
 }
 
 export function useCareerAgent() {
   const [screen, setScreen] = useState('welcome') // welcome | questions | loading | results | error
   const [currentQ, setCurrentQ] = useState(0)
   const [answers, setAnswers] = useState(['', '', '', '', ''])
-  const [paths, setPaths] = useState([])
+  const [careers, setCareers] = useState(null) // { unconventional, conventional }
 
   async function submit(submittedAnswers) {
     setScreen('loading')
@@ -36,7 +35,7 @@ export function useCareerAgent() {
       try {
         const result = await fetchPaths(submittedAnswers)
         window.history.replaceState(null, '', `?q=${encodeAnswers(submittedAnswers)}`)
-        setPaths(result)
+        setCareers(result)
         setScreen('results')
         return
       } catch {
@@ -79,7 +78,7 @@ export function useCareerAgent() {
     screen,
     currentQ,
     answers,
-    paths,
+    careers,
     questions: QUESTIONS,
     start,
     nextQuestion,
